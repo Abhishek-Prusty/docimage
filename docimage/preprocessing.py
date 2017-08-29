@@ -241,5 +241,5 @@ def skew_correction(img):
 def preprocess(img):
   return skew_correction(img)
 
-
-cv2.destroyAllWindows()
+# Does not work with linux:
+# cv2.destroyAllWindows()
