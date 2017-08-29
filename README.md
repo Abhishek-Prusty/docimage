@@ -3,14 +3,14 @@ A library to process document images (with particular focus on Indic languages).
 
 ## Usage
 - Please see the generated python sphynx docs in one of the following places:
-    - [project page](https://sanskrit-coders.github.io/docimage/build/html/docimage.html).
+    - [project page](https://vedavaapi.github.io/docimage/build/html/docimage.html).
     - http://docimage.readthedocs.io
     - under docs/_build/html/index.html
 - Design considerations for data containers corresponding to the various submodules (such as books and annotations) are given below - or in the corresponding source files.
 
 # For contributors
 ## Contact
-Have a problem or question? Please head to [github](https://github.com/sanskrit-coders/docimage).
+Have a problem or question? Please head to [github](https://github.com/vedavaapi/docimage).
 
 ## Packaging
 * ~/.pypirc should have your pypi login credentials.

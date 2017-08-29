@@ -33,7 +33,7 @@ setup(
   long_description=long_description,
 
   # The project's main homepage.
-  url='https://github.com/sanskrit-coders/docimage',
+  url='https://github.com/vedavaapi/docimage',
 
   # Author details
   author='Sanskrit programmers',
