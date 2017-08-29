@@ -148,7 +148,7 @@ def skew_correction(img):
   all_angles = []
 
   contours, hierarchy = cv2.findContours(words, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-  logging.info(len(contours))
+  logging.debug(len(contours))
   contour_count = 0
   for c in contours:
     # max_index = np.argmax(areas)
@@ -188,11 +188,11 @@ def skew_correction(img):
     angle = (np.arctan2(y, x)) * (180 / np.pi)
     all_angles.append(angle)
     contour_count += 1
-    print contour_count
+    logging.debug(contour_count)
 
-    print all_angles
+    logging.debug(all_angles)
     angle = np.mean(all_angles)
-    print angle
+    logging.debug(angle)
 
   k = 0
   non_zero_angles = []
@@ -201,32 +201,32 @@ def skew_correction(img):
     if ((i != 0) and (i != 90.0)):
       non_zero_angles.append(i)
 
-  print non_zero_angles
+  logging.debug(non_zero_angles)
 
   rounded_angles = []
   for i in non_zero_angles:
     rounded_angles.append(np.round(i, 0))
 
-  print rounded_angles
-  print "mode is"
-  # print np.mode(rounded_angles)
+  logging.debug(rounded_angles)
+  logging.debug("mode is")
+  # logging.debug(np.mode(rounded_angles))
   # angle = np.mean(non_zero_angles)
   # angle = np.mode(rounded_angles)
 
   mode_angle = mode(rounded_angles)[0][0]
-  print mode_angle
+  logging.debug(mode_angle)
 
   precision_angles = []
   for i in non_zero_angles:
     if (np.round(i, 0) == mode_angle):
       precision_angles.append(i)
 
-  print 'precision angles:'
-  print precision_angles
+  logging.debug('precision angles:')
+  logging.debug(precision_angles)
 
   angle = np.mean(precision_angles)
-  print 'Finally, the required angle is:'
-  print angle
+  logging.debug('Finally, the required angle is:')
+  logging.debug(angle)
 
   # M = cv2.getRotationMatrix2D((width/2,height/2),-(90+angle),1)
   M = cv2.getRotationMatrix2D((width / 2, height / 2), -(90 + angle), 1)
