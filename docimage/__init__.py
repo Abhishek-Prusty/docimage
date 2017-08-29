@@ -9,7 +9,7 @@ import numpy as np
 from PIL import Image
 from sanskrit_data.schema import ullekhanam
 
-import preprocessing
+from docimage import preprocessing
 
 logging.basicConfig(
   level=logging.DEBUG,
@@ -346,7 +346,7 @@ def mainTEST(arg):
 
   image = Image.open(arg).convert('RGB')
   workingFilename = fname+"_working.jpg"
-  out = file(workingFilename, "w")
+  out = open(workingFilename, "w")
   img = DocImage.resize(image, (1920,1080), False)
   img.save(out, "JPEG", quality=100)
   out.close()
