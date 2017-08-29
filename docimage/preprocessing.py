@@ -11,9 +11,16 @@ correction method! That'll probably take lesser time...
 Resizing is yielding better results.
 """
 
+import logging
+
 import cv2
 import numpy as np
 from scipy.stats import mode
+
+logging.basicConfig(
+  level=logging.DEBUG,
+  format="%(levelname)s: %(asctime)s {%(filename)s:%(lineno)d}: %(message)s "
+)
 
 kernel = np.ones((5, 5), np.uint8)
 clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -141,7 +148,7 @@ def skew_correction(img):
   all_angles = []
 
   contours, hierarchy = cv2.findContours(words, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
-  print len(contours)
+  logging.info(len(contours))
   contour_count = 0
   for c in contours:
     # max_index = np.argmax(areas)
