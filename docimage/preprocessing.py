@@ -110,7 +110,7 @@ def skew_correction(img):
 
   binary = binary_img(img)
   # binary = resize(binary)
-  contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+  im2, contours, hierarchy = cv2.findContours(binary, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
   # cnt = contours[0]
   # upper_bound=len(contours)
   height_orig, width_orig = img.shape[:2]
@@ -147,7 +147,7 @@ def skew_correction(img):
   height_orig, width_orig = img.shape[:2]
   all_angles = []
 
-  contours, hierarchy = cv2.findContours(words, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+  im2, contours, hierarchy = cv2.findContours(words, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
   logging.debug(len(contours))
   contour_count = 0
   for c in contours:

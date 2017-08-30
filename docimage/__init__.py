@@ -259,7 +259,7 @@ class DocImage:
     upper_bound = totalArea / 4
 
     ret,thresh = cv2.threshold(dilation,127,255,0)
-    contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    im2, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
     for c in contours:
       x,y,w,h = cv2.boundingRect(c)
@@ -271,7 +271,7 @@ class DocImage:
     print("Contours Len = "+str(len(contours)))
 
     #        ret,thresh = cv2.threshold(boxes_temp,127,255,0)
-    #        contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    #        im2, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
     #        for c in contours:
     #            x,y,w,h = cv2.boundingRect(c)
@@ -286,7 +286,7 @@ class DocImage:
     allsegments = []
 
     ret,thresh = cv2.threshold(boxes_temp,127,255,0)
-    contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    im2, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
     print("Lower="+str(lower_bound)+" Upper="+str(upper_bound))
 
