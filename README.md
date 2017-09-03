@@ -1,6 +1,12 @@
 # Introduction
 A library to process document images (with particular focus on Indic languages).
 
+## Installation
+- Install this library (Replace pip2 with pip3 as needed)
+    - Latest release: `sudo pip2 install docimage -U`
+    - Development copy: `sudo pip2 install git+https://github.com/vedavaapi/docimage@master -U`
+    - [Web](https://pypi.python.org/pypi/docimage).
+
 ## Usage
 - Please see the generated python sphynx docs in one of the following places:
     - [project page](https://vedavaapi.github.io/docimage/build/html/docimage.html).
