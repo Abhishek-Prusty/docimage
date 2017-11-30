@@ -36,7 +36,7 @@ setup(
   url='https://github.com/vedavaapi/docimage',
 
   # Author details
-  author='Sanskrit programmers',
+  author='Vedavaapi',
   author_email='sanskrit-programmers@googlegroups.com',
 
   # Choose your license
