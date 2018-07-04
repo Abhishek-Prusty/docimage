@@ -95,13 +95,13 @@ class DocImage:
       cv2.imwrite(workingImgFile, self.working_img_rgb)
     self.working_img_gray = cv2.cvtColor(self.working_img_rgb, cv2.COLOR_BGR2GRAY)
     self.ww, self.wh = self.working_img_gray.shape[::-1]
-    logging.info("W width = " + str(self.ww) + ", W ht = " + str(self.wh))
+    #logging.info("W width = " + str(self.ww) + ", W ht = " + str(self.wh))
 
   def init(self):
     self.img_gray = cv2.cvtColor(self.img_rgb, cv2.COLOR_BGR2GRAY)
     self.img_bin = preprocessing.binary_img(self.img_gray)
     self.w, self.h = self.img_gray.shape[::-1]
-    logging.info("width = " + str(self.w) + ", ht = " + str(self.h))
+    #logging.info("width = " + str(self.w) + ", ht = " + str(self.h))
 
   def from_image(self, img_cv):
     self.img_rgb = img_cv
@@ -112,8 +112,8 @@ class DocImage:
     from os.path import join
     [base_path, ext] = os.path.splitext(path)
     workingImgPath = join(base_path + "_working.jpg")
-    logging.info("Image path = " + path)
-    logging.info("Working Image path = " + workingImgPath)
+    #logging.info("Image path = " + path)
+    #logging.info("Working Image path = " + workingImgPath)
     return DocImage(path, workingImgPath)
 
   @staticmethod
@@ -236,7 +236,7 @@ class DocImage:
     show_img('BorderedOutput',img)
 
     boxes_temp = np.zeros(img.shape[:2],np.uint8)
-    logging.info("boxes generated")
+    #logging.info("boxes generated")
 
     binary = 255-img
 
@@ -259,7 +259,7 @@ class DocImage:
     upper_bound = totalArea / 4
 
     ret,thresh = cv2.threshold(dilation,127,255,0)
-    im2, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
     for c in contours:
       x,y,w,h = cv2.boundingRect(c)
@@ -286,7 +286,7 @@ class DocImage:
     allsegments = []
 
     ret,thresh = cv2.threshold(boxes_temp,127,255,0)
-    im2, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
     print("Lower="+str(lower_bound)+" Upper="+str(upper_bound))
 
@@ -352,7 +352,7 @@ def mainTEST(arg):
   out.close()
 
   img = DocImage(arg,fname+"_working.jpg")
-  segments = img.find_text_regions(0, 0)
+  segments = img.find_text_regions(1, 1)
 
   first_snippet = img.snippet(segments[5])
   cv2.imshow('First snippet', first_snippet.img_rgb)

@@ -60,6 +60,7 @@ setup(
 
     # Specify the Python versions you support here. In particular, ensure
     # that you indicate whether you support Python 2, Python 3 or both.
+    'Programming Language :: Python :: 2.7',
     'Programming Language :: Python :: 3',
     'Programming Language :: Python :: 3.5',
     'Programming Language :: Python :: 3.6',
@@ -81,7 +82,7 @@ setup(
   # requirements files see:
   # https://packaging.python.org/en/latest/requirements.html
   install_requires=[
-    'scikit-image', 'opencv-python', 'sanskrit_data', 'numpy', 'scipy', 'Pillow',
+    'scikit-image', 'sanskrit_data', 'numpy', 'scipy', 'Pillow',
 
     # Database dependencies
     # Rather than automatically install unnecessary database access modules (users may only be interested in interacting with a particular database through the interface), we should let them install them separately.
