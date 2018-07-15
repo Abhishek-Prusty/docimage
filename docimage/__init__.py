@@ -11,6 +11,10 @@ from sanskrit_data.schema import ullekhanam
 
 from docimage import preprocessing
 
+from imutils import contours
+from skimage import measure
+import imutils
+
 logging.basicConfig(
   level=logging.DEBUG,
   format="%(levelname)s: %(asctime)s {%(filename)s:%(lineno)d}: %(message)s "
@@ -65,6 +69,7 @@ class DocImage:
     self.working_img_gray = None
     self.img_rgb = None
     self.img_gray = None
+    self.OutputFile = None
     self.w = 0
     self.h = 0
     self.ww = 0
@@ -93,6 +98,7 @@ class DocImage:
       self.working_img_rgb = cv2.cvtColor(np.array(pil_im), cv2.COLOR_RGB2BGR)
 
       cv2.imwrite(workingImgFile, self.working_img_rgb)
+    self.OutputFile = self.working_img_rgb
     self.working_img_gray = cv2.cvtColor(self.working_img_rgb, cv2.COLOR_BGR2GRAY)
     self.ww, self.wh = self.working_img_gray.shape[::-1]
     #logging.info("W width = " + str(self.ww) + ", W ht = " + str(self.wh))
@@ -178,7 +184,7 @@ class DocImage:
     return disjoint_matches
 
   def snippet(self, r):
-    template_img = self.img_rgb[r.y:(r.y+r.h), r.x:(r.x+r.w)]
+    template_img = self.img_rgb[r.y1:(r.y1+r.h), r.x1:(r.x1+r.w)]
     template = DocImage()
     template.from_image(template_img)
     return template
@@ -224,28 +230,103 @@ class DocImage:
       if int(pause_int) != 0:
         cv2.waitKey(0)
 
+    def non_max_suppression_fast(boxes, overlapThresh):
+      boxes = np.array(boxes)
+      if len(boxes) == 0:
+        return []
+      # if the bounding boxes integers, convert them to floats --
+      # this is important since we'll be doing a bunch of divisions
+      if boxes.dtype.kind == "i":
+        boxes = boxes.astype("float")
+      pick = []
+      print("Boxes",boxes)
+      x1 = boxes[:,0]
+      y1 = boxes[:,1]
+      x2 = boxes[:,2]
+      y2 = boxes[:,3]
+
+      
+      area = (x2 - x1 + 1) * (y2 - y1 + 1)
+      idxs = np.argsort(y2)
+      
+      while len(idxs) > 0:
+      
+        last = len(idxs) - 1
+        i = idxs[last]
+        pick.append(i)
+      
+        xx1 = np.maximum(x1[i], x1[idxs[:last]])
+        yy1 = np.maximum(y1[i], y1[idxs[:last]])
+        xx2 = np.minimum(x2[i], x2[idxs[:last]])
+        yy2 = np.minimum(y2[i], y2[idxs[:last]])
+     
+        w = np.maximum(0, xx2 - xx1 + 1)
+        h = np.maximum(0, yy2 - yy1 + 1)
+     
+        overlap = (w * h) / area[idxs[:last]]
+     
+        idxs = np.delete(idxs, np.concatenate(([last],
+          np.where(overlap > overlapThresh)[0])))
+      
+      return boxes[pick].astype("int")
+
     show_img('Output0',img)
+    th1 = img
+    th1 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 12)
+    show_img('adaptiveThreshold', th1)
 
-    ret,th1 = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
-    show_img('Global Thresholding (v = 127)', th1)
+    blur = cv2.GaussianBlur(th1,(3,3),0)
+    show_img('blur', blur)
 
-    crop_img = th1[5:th1.shape[0]-10, 5:th1.shape[1]-10]
-    show_img('CroppedOutput',crop_img)
+    # blur = cv2.medianBlur(th1,3)
+    # show_img('median filtering',blur)
 
-    img= cv2.copyMakeBorder(crop_img,5,5,5,5,cv2.BORDER_CONSTANT,value=(0,0,0))
-    show_img('BorderedOutput',img)
+    # ret3,th1 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    # show_img('otsuThreshold after adaptive', th1)
+
+
+    #ret,th1 = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
+    #show_img('Global Thresholding (v = 127)', th1)
+
+    # crop_img = th1[5:th1.shape[0]-2, 5:th1.shape[1]-2]
+    # show_img('CroppedOutput',crop_img)
+
+    # img= cv2.copyMakeBorder(crop_img,5,5,5,5,cv2.BORDER_CONSTANT,value=(0,0,0))
+    # show_img('BorderedOutput',img)
+    img = th1
 
     boxes_temp = np.zeros(img.shape[:2],np.uint8)
     #logging.info("boxes generated")
 
     binary = 255-img
+    dilation=binary
 
-    dilation = cv2.dilate(binary,kernel1,iterations = 1)
-    show_img('Dilation', dilation)
+    #erosion = cv2.erode(binary, kernel1, iterations=1)
+    #show_img('Erosion', erosion)
 
-    dilation = cv2.dilate(dilation,kernel1,iterations = 1)
-    show_img('Dilation2', dilation)
+    # dilation = cv2.dilate(dilation,kernel1,iterations = 1)
+    # show_img('dilationation', dilation)
 
+    #dilation = cv2.GaussianBlur(dilation,(1,3),0)
+    #show_img('GaussianBlur',dilation)
+
+    labels = measure.label(dilation, neighbors=8, background=0)
+    mask = np.zeros(dilation.shape, dtype="uint8")
+
+    for label in np.unique(labels):
+      
+      if label == 0:
+        continue
+
+      labelMask = np.zeros(dilation.shape, dtype="uint8")
+      labelMask[labels == label] = 255
+      numPixels = cv2.countNonZero(labelMask)
+     
+      if numPixels > 5:
+        mask = cv2.add(mask, labelMask)
+
+    show_img('mask', mask)
+    
     if self.working_img_gray is None:
       factorX = float(1.0)
       factorY = float(1.0)
@@ -255,90 +336,76 @@ class DocImage:
     #        logging.info("factorx:"+str(factorX)+"factory:"+str(factorY))
 
     # Bounds are a guess work, more can be on it.
-    lower_bound = totalArea / 3000
-    upper_bound = totalArea / 4
-
-    ret,thresh = cv2.threshold(dilation,127,255,0)
-    contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-
-    for c in contours:
-      x,y,w,h = cv2.boundingRect(c)
-      if (((w*h) <= lower_bound or (w*h) >= upper_bound)) :
-        continue
-      cv2.rectangle(boxes_temp,(x,y),(x+w,y+h),(255,0,0),-1)
-
-    show_img('Boxes_temp',boxes_temp)
-    print("Contours Len = "+str(len(contours)))
-
-    #        ret,thresh = cv2.threshold(boxes_temp,127,255,0)
-    #        im2, contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
-
-    #        for c in contours:
-    #            x,y,w,h = cv2.boundingRect(c)
-    #            if (((w*h) <= lower_bound or (w*h) >= upper_bound)) :
-    #                continue
-    #            cv2.rectangle(boxes_temp,(x,y),(x+w,y+h),(255,0,0),-1)
-
-    #        show_img('Boxes_temp 2',boxes_temp)
-    #        print("Contours 2 Len = "+str(len(contours)))
-
+    lower_bound = totalArea / 12000
+    upper_bound = totalArea / 120
+    
+    ret,thresh = cv2.threshold(mask.copy(),127,255,0)
+    immm,contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    
 
     allsegments = []
 
-    ret,thresh = cv2.threshold(boxes_temp,127,255,0)
-    contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
+    ret,thresh = cv2.threshold(mask.copy(),127,255,0)
+    immm,contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
 
     print("Lower="+str(lower_bound)+" Upper="+str(upper_bound))
 
     print("Contours 3 Len = "+str(len(contours)))
-
+    print("contours",contours)
+    listx=[]
+    listy=[]
     for c in contours:
       coordinates = {'x': 0, 'y':0, 'h':0, 'w':0, 'score':float(0.0)}
       x,y,w,h = cv2.boundingRect(c)
       #            logging.info("x:"+str(x)+"y:"+str(y)+"w:"+str(w)+"h"+str(h))
       if (((w*h) <= lower_bound or (w*h) >= upper_bound)) :
         continue
-      cv2.rectangle(boxes_temp,(x,y),(x+w,y+h),(255,0,0),1)
+      # cv2.rectangle(boxes_temp,(x,y),(x+w,y+h),(255,0,0),1)
+      listy=[x,y,x+w,y+h]
+      listx.append(listy)
+      listy=[]
 
-      coordinates['x'] = int(x * factorX)
-      coordinates['y'] = int(y * factorY)
-      coordinates['w'] = int(w * factorX)
-      coordinates['h'] = int(h * factorY)
 
-      #            logging.info("x*:"+str(coordinates['x'])+"y:"+str(coordinates['y'])+"w:"+str(coordinates['w'])+"h"+str(coordinates['h']))
-      allsegments.append(
-        ullekhanam.Rectangle.from_details(x=coordinates['x'], y=coordinates['y'], w=coordinates['w'], h=coordinates['h']))
+    
+    boxes_temp1= non_max_suppression_fast(listx,0.3)
+    for c in boxes_temp1:
+      cv2.rectangle(boxes_temp,(c[0],c[1]),(c[2],c[3]),(255,0,0),2)
+    show_img('Boxes_temp 3',boxes_temp)    
 
-    show_img('Boxes_temp 3',boxes_temp)
 
-    return allsegments
+
+    return boxes_temp1
+
+  
+
+
 
   def add_rectangles(self, sel_areas, color = (0, 0, 255), thickness = 2):
     for rect in sel_areas:
-      cv2.rectangle(self.img_rgb, (rect['x'], rect['y']),
-                    (rect['x'] + rect['w'], rect['y'] + rect['h']), color, thickness)
+      cv2.rectangle(self.img_rgb, (rect[0], rect[1]),
+                    (rect[2],rect[3]), color, thickness)
 
 
-def main(args):
-  img = DocImage(args[0])
-  rect = { 'x' : int(args[1]),
-           'y' : int(args[2]),
-           'w' : int(args[3]), 'h' : int(args[4]), 'score' : float(1.0) }
-  logging.info("Template rect = " + json.dumps(rect))
-  matches = img.find_recurrence(rect, 0.7)
-  pprint(matches)
-  logging.info("Total", len(matches), "matches found.")
+# def main(args):
+#   img = DocImage(args[0])
+#   rect = { 'x' : int(args[1]),
+#            'y' : int(args[2]),
+#            'w' : int(args[3]), 'h' : int(args[4]), 'score' : float(1.0) }
+#   logging.info("Template rect = " + json.dumps(rect))
+#   matches = img.find_recurrence(rect, 0.7)
+#   pprint(matches)
+#   logging.info("Total", len(matches), "matches found.")
 
-  #logging.info(json.dumps(matches))
-  img.add_rectangles(matches)
-  img.add_rectangles([rect], (0, 255, 0))
+#   #logging.info(json.dumps(matches))
+#   img.add_rectangles(matches)
+#   img.add_rectangles([rect], (0, 255, 0))
 
-  cv2.namedWindow('Annotated image', cv2.WINDOW_NORMAL)
-  cv2.imshow('Annotated image', img.img_rgb)
-  cv2.waitKey(0)
-  cv2.destroyAllWindows()
+#   cv2.namedWindow('Annotated image', cv2.WINDOW_NORMAL)
+#   cv2.imshow('Annotated image', img.img_rgb)
+#   cv2.waitKey(0)
+#   cv2.destroyAllWindows()
 
-  sys.exit(0)
+#   sys.exit(0)
 
 def mainTEST(arg):
   [bpath, filename] = os.path.split(arg)
@@ -353,14 +420,10 @@ def mainTEST(arg):
 
   img = DocImage(arg,fname+"_working.jpg")
   segments = img.find_text_regions(1, 1)
-
-  first_snippet = img.snippet(segments[5])
-  cv2.imshow('First snippet', first_snippet.img_rgb)
-  cv2.waitKey(0)
-  first_snippet.save(fname + "_snippet1.jpg")
-
+  
+  
   anno_img = DocImage()
-  anno_img.from_image(img.img_rgb)
+  anno_img.from_image(img.OutputFile)
   anno_img.add_rectangles(segments)
   #    img.annotate(img.find_sections(1,1))
   #img.annotate(img.find_segments(1,1))
@@ -377,9 +440,8 @@ def mainTEST(arg):
 
   cv2.imshow('Final image', anno_img.img_rgb)
   cv2.waitKey(0)
-
-
   cv2.destroyAllWindows()
+
 
 
 if __name__ == "__main__":
