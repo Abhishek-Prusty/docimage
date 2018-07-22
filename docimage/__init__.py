@@ -11,7 +11,6 @@ from sanskrit_data.schema import ullekhanam
 import preprocessing
 
 from skimage import measure
-import skimage
 
 logging.basicConfig(
   level=logging.DEBUG,
@@ -83,12 +82,12 @@ class DocImage:
 
   def update_image_file(self, imgfile):
     self.fname = imgfile
-    self.img_rgb = skimage.io.imread(self.fname)
+    self.img_rgb = cv2.imread(self.fname)
     self.init()
 
   def update_working_file(self, workingImgFile):
     self.fname = workingImgFile
-    self.working_img_rgb = skimage.io.imread(self.fname)
+    self.working_img_rgb = cv2.imread(self.fname)
     if (self.working_img_rgb is None) :
 
       temp_img = cv2.cvtColor(self.img_rgb, cv2.COLOR_RGB2BGR)
