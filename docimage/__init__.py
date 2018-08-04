@@ -92,6 +92,7 @@ class DocImage:
     self.fname = workingImgFile
     self.working_img_rgb = cv2.imread(self.fname)
     if (self.working_img_rgb is None) :
+
       temp_img = cv2.cvtColor(self.img_rgb, cv2.COLOR_RGB2BGR)
       pil_im = Image.fromarray(temp_img)
       self.working_img_rgb = DocImage.resize(pil_im, (1920, 1080), False)
@@ -270,29 +271,26 @@ class DocImage:
       
       return boxes[pick].astype("int")
 
-    show_img('Output0',img)
-    th1 = img
-    th1 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 12)
-    show_img('adaptiveThreshold', th1)
 
+    images1=[]
+    show_img('Output0',img)
+    images1.append(img)
+    
+    th1 = img
+    th1 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 5)
+    show_img('adaptiveThreshold', th1)
+    images1.append(th1)
+    
     blur = cv2.GaussianBlur(th1,(3,3),0)
     show_img('blur', blur)
+    images1.append(blur)
 
     # blur = cv2.medianBlur(th1,3)
     # show_img('median filtering',blur)
 
-    # ret3,th1 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
-    # show_img('otsuThreshold after adaptive', th1)
+    #ret3,th1 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    #show_img('otsuThreshold after adaptive', th1)
 
-
-    #ret,th1 = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
-    #show_img('Global Thresholding (v = 127)', th1)
-
-    # crop_img = th1[5:th1.shape[0]-2, 5:th1.shape[1]-2]
-    # show_img('CroppedOutput',crop_img)
-
-    # img= cv2.copyMakeBorder(crop_img,5,5,5,5,cv2.BORDER_CONSTANT,value=(0,0,0))
-    # show_img('BorderedOutput',img)
     img = th1
 
     boxes_temp = np.zeros(img.shape[:2],np.uint8)
@@ -326,7 +324,8 @@ class DocImage:
         mask = cv2.add(mask, labelMask)
 
     show_img('mask', mask)
-    
+    images1.append(mask)
+
     if self.working_img_gray is None:
       factorX = float(1.0)
       factorY = float(1.0)
@@ -370,13 +369,10 @@ class DocImage:
     boxes_temp1= non_max_suppression_fast(listx,0.3)
     for c in boxes_temp1:
       cv2.rectangle(boxes_temp,(c[0],c[1]),(c[2],c[3]),(255,0,0),2)
-    show_img('Boxes_temp 3',boxes_temp)    
+    show_img('Boxes_temp 3',boxes_temp)
+    images1.append(boxes_temp)    
 
-
-
-    return boxes_temp1
-
-  
+    return boxes_temp1,images1
 
 
 
@@ -419,7 +415,7 @@ def mainTEST(arg):
   out.close()
 
   img = DocImage(arg,fname+"_working.jpg")
-  segments = img.find_text_regions(1, 1)
+  segments, images1 = img.find_text_regions(1, 1)
   
   
   anno_img = DocImage()
@@ -439,9 +435,29 @@ def mainTEST(arg):
   cv2.resizeWindow('Final image', window_width, window_height)
 
   cv2.imshow('Final image', anno_img.img_rgb)
+  images1.append(anno_img.img_rgb)
   cv2.waitKey(0)
   cv2.destroyAllWindows()
 
+
+  height = sum(image.shape[0] for image in images1)
+  width = max(image.shape[1] for image in images1)
+  output = np.zeros((height,width,3))
+  print(output.shape)
+
+  y = 0
+  for image in images1:
+    if(len(image.shape)==2):
+      image = cv2.cvtColor(image,cv2.COLOR_GRAY2RGB)
+      h,w,c = image.shape
+      output[y:y+h,0:w,0:c] = image
+    else:
+      h,w,c = image.shape
+      output[y:y+h,0:w,0:c] = image
+
+    y += h
+  nmm="test_"+fname+".jpg"
+  cv2.imwrite(nmm, output)
 
 
 if __name__ == "__main__":
