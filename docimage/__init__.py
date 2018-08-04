@@ -8,9 +8,12 @@ import cv2
 import numpy as np
 from PIL import Image
 from sanskrit_data.schema import ullekhanam
+
 from docimage import preprocessing
 
+from imutils import contours
 from skimage import measure
+import imutils
 
 logging.basicConfig(
   level=logging.DEBUG,
