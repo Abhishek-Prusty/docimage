@@ -3,17 +3,12 @@ import logging
 import os
 import sys
 from pprint import pprint
-
 import cv2
 import numpy as np
 from PIL import Image
 from sanskrit_data.schema import ullekhanam
-
-from docimage import preprocessing
-
-from imutils import contours
+import preprocessing
 from skimage import measure
-import imutils
 
 logging.basicConfig(
   level=logging.DEBUG,
