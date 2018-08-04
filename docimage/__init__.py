@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from PIL import Image
 from sanskrit_data.schema import ullekhanam
-import preprocessing
+from docimage import preprocessing
 
 from skimage import measure
 
