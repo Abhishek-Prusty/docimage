@@ -82,7 +82,7 @@ for i in range(len(allimages)):
 
   next_img = DocImage()
   next_img.load(imagedir + allimages[i])
-  match_locs = next_img.find(template_img, float(threshold1))
+  match_locs = next_img.find_recurrence(template_img, float(threshold1))
   if (len(match_locs) == 0):
     continue
   next_img.add_rectangles(match_locs)

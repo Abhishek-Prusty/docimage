@@ -9,6 +9,7 @@ from PIL import Image
 from sanskrit_data.schema import ullekhanam
 import preprocessing
 from skimage import measure
+import pickle as pkl
 
 logging.basicConfig(
   level=logging.DEBUG,
@@ -162,7 +163,6 @@ class DocImage:
 
   def find_matches(self, template_img, thres = 0.7, known_segments = None):
     res = cv2.matchTemplate(self.img_bin,  template_img.img_bin, cv2.TM_CCOEFF_NORMED )
-
     loc = np.where(res >= float(thres))
     def ptToImgTarget(pt):
       return ullekhanam.Rectangle.from_details(x=pt[0], y= pt[1],
@@ -180,7 +180,8 @@ class DocImage:
     return disjoint_matches
 
   def snippet(self, r):
-    template_img = self.img_rgb[r.y1:(r.y1+r.h), r.x1:(r.x1+r.w)]
+    #template_img = self.img_rgb[r.y:(r.y+r.h), r.x:(r.x+r.w)]
+    template_img = self.img_rgb[r["y"]:(r["y"]+r["h"]), r["x"]:(r["x"]+r["w"])]
     template = DocImage()
     template.from_image(template_img)
     return template
@@ -192,7 +193,7 @@ class DocImage:
 
     if known_segments is None:
       known_segments = DisjointRectangles()
-    known_segments.insert(ullekhanam.Rectangle.from_details(x=r['x'], y=r['y'], w=r['w'], h=r['h']))
+    known_segments.insert(ullekhanam.Rectangle.from_details(x=r["x"], y=r["y"], w=r["w"], h=r["h"]))
     return self.find_matches(template, thres, known_segments)
 
   def self_to_image(self):
@@ -218,11 +219,10 @@ class DocImage:
         scale = min(scale_width, scale_height)
         window_width = int(fname.shape[1] * scale)
         window_height = int(fname.shape[0] * scale)
-
         cv2.namedWindow(name, cv2.WINDOW_NORMAL)
         cv2.resizeWindow(name, window_width, window_height)
-
         cv2.imshow(name, fname)
+
       if int(pause_int) != 0:
         cv2.waitKey(0)
 
@@ -271,17 +271,25 @@ class DocImage:
     show_img('Output0',img)
     images1.append(img)
     
-    th1 = img
-    th1 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 5, 5)
+
+    #ret3,th1 = cv2.threshold(img,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    #show_img('otsuThreshold after adaptive', th1)
+
+    #ret,th2 = cv2.threshold(img,ret3-10,255,cv2.THRESH_BINARY)
+    #show_img('binary', th2)
+
+
+    th1 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 25, 10)
     show_img('adaptiveThreshold', th1)
     images1.append(th1)
     
-    blur = cv2.GaussianBlur(th1,(3,3),0)
-    show_img('blur', blur)
+
+    blur = cv2.medianBlur(th1,3)
+    show_img('median filtering',blur)
     images1.append(blur)
 
-    # blur = cv2.medianBlur(th1,3)
-    # show_img('median filtering',blur)
+    blur = cv2.GaussianBlur(blur,(5,5),0)
+    show_img('blur', blur)
 
     #ret3,th1 = cv2.threshold(blur,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
     #show_img('otsuThreshold after adaptive', th1)
@@ -330,8 +338,8 @@ class DocImage:
     #        logging.info("factorx:"+str(factorX)+"factory:"+str(factorY))
 
     # Bounds are a guess work, more can be on it.
-    lower_bound = totalArea / 12000
-    upper_bound = totalArea / 120
+    lower_bound = totalArea / 20000
+    upper_bound = totalArea / 10
     
     ret,thresh = cv2.threshold(mask.copy(),127,255,0)
     immm,contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_SIMPLE)
@@ -377,26 +385,26 @@ class DocImage:
                     (rect[2],rect[3]), color, thickness)
 
 
-# def main(args):
-#   img = DocImage(args[0])
-#   rect = { 'x' : int(args[1]),
-#            'y' : int(args[2]),
-#            'w' : int(args[3]), 'h' : int(args[4]), 'score' : float(1.0) }
-#   logging.info("Template rect = " + json.dumps(rect))
-#   matches = img.find_recurrence(rect, 0.7)
-#   pprint(matches)
-#   logging.info("Total", len(matches), "matches found.")
+def main(args):
+   img = DocImage(args[0])
+   rect = { 'x' : int(args[1]),
+            'y' : int(args[2]),
+            'w' : int(args[3]), 'h' : int(args[4]), 'score' : float(1.0) }
+   logging.info("Template rect = " + json.dumps(rect))
+   matches = img.find_recurrence(rect, 0.7)
+   pprint(matches)
+   logging.info("Total", len(matches), "matches found.")
 
-#   #logging.info(json.dumps(matches))
-#   img.add_rectangles(matches)
-#   img.add_rectangles([rect], (0, 255, 0))
+   #logging.info(json.dumps(matches))
+   img.add_rectangles(matches)
+   img.add_rectangles([rect], (0, 255, 0))
 
-#   cv2.namedWindow('Annotated image', cv2.WINDOW_NORMAL)
-#   cv2.imshow('Annotated image', img.img_rgb)
-#   cv2.waitKey(0)
-#   cv2.destroyAllWindows()
+   cv2.namedWindow('Annotated image', cv2.WINDOW_NORMAL)
+   cv2.imshow('Annotated image', img.img_rgb)
+   cv2.waitKey(0)
+   cv2.destroyAllWindows()
 
-#   sys.exit(0)
+   sys.exit(0)
 
 def mainTEST(arg):
   [bpath, filename] = os.path.split(arg)
@@ -411,7 +419,21 @@ def mainTEST(arg):
 
   img = DocImage(arg,fname+"_working.jpg")
   segments, images1 = img.find_text_regions(1, 1)
+  print("special:  ",len(segments))
+
+  with open('segments.pkl','wb') as f:
+    pkl.dump(segments,f)
+
+  #for seg in segments:
   
+  #  first_snippet = img.snippet(seg)
+  #  cv2.imshow('First snippet', first_snippet.img_rgb)
+  #  cv2.waitKey(0)
+    #first_snippet.save(fname + "_snippet1.jpg")
+  #first_snippet = img.snippet(segments[5])
+  #cv2.imshow('First snippet', first_snippet.img_rgb)
+  #cv2.waitKey(0)
+  #first_snippet.save(fname + "_snippet1.jpg")
   
   anno_img = DocImage()
   anno_img.from_image(img.OutputFile)
