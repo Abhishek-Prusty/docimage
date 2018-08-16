@@ -282,6 +282,9 @@ class DocImage:
     th1 = cv2.adaptiveThreshold(img, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 25, 10)
     show_img('adaptiveThreshold', th1)
     images1.append(th1)
+
+    #th1 = cv2.dilate(th1, kernel1, iterations=1)
+    #show_img('dilation', th1)
     
 
     blur = cv2.medianBlur(th1,3)
@@ -328,6 +331,7 @@ class DocImage:
 
     show_img('mask', mask)
     images1.append(mask)
+    cv2.imwrite('ttttttt.jpg',mask)
 
     if self.working_img_gray is None:
       factorX = float(1.0)

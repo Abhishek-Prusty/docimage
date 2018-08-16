@@ -9,57 +9,66 @@ import colorsys
 ap = argparse.ArgumentParser()
 ap.add_argument("-i", "--page", required=True,
                 help="Path to the image")
+ap.add_argument("-m", "--mask", required=True,
+                help="Path to the mask")
 
 args = vars(ap.parse_args())
 imgs=args["page"]
-img=cv2.imread(imgs,0)
-img2=cv2.imread(imgs,0)
-
+imgs2=args["mask"]
+img=cv2.imread(imgs,1)
+img2=cv2.imread(imgs2,0)
 
 with open('segments.pkl','rb') as f:
     segments=pkl.load(f)
 
-print(len(segments))
-'''
-cv2.imshow('image', template)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-'''
-no_segs=len(segments)
-cols=list()
-for i in range(no_segs):
-    rgb = colorsys.hsv_to_rgb(i / 300., 1.0, 1.0)
-    cols.append([round(255*x) for x in rgb])
+#print(segments[0])
+segments=sorted(segments,key=lambda x:(x[1]))
+segments=sorted(segments,key=lambda x:(x[1]*x[0]))
 
+#print(segments[0])
+
+print(len(segments))
+no_segs=len(segments)
+temp_inc=0
+matt_inc=2
 count=0
 for segment in segments:
-    img=cv2.imread(imgs,0)
-    template=img[segment[1]:segment[3],segment[0]:segment[2]]
-    cv2.imshow("tmp",template)
+    img=cv2.imread(imgs,1)
+    img2=cv2.imread(imgs2,0)
+    #template=img2[(1-int(temp_inc/100))*segment[1]:(1+int(temp_inc/100))*segment[3],(1-int(temp_inc/100))*segment[0]:(1+int(temp_inc/100))*segment[2]]
+    template=img2[segment[1]-temp_inc:segment[3]+temp_inc,segment[0]-temp_inc:segment[2]+temp_inc]
+    cv2.imshow("template",template)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     w, h = template.shape[::-1]
-    res = cv2.matchTemplate(img,template,cv2.TM_CCOEFF_NORMED)
-    threshold = 0.8
-    loc = np.where( res >= threshold) 
-    for pt in zip(*loc[::-1]):
-        colo=(cols[count][0],cols[count][1],cols[count][2])
-        cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,255,255), 2)
-        #cv2.rectangle(img2, pt, (pt[0] + w, pt[1] + h), (0,255,0), 2)
+    matches=list()
+    for seg in segments:
+        #matt=img2[(1-int(matt_inc/100))*seg[1]:(1+int(matt_inc/100))*seg[3],(1-int(matt_inc/100))*seg[0]:(1+int(matt_inc/100))*seg[2]]
+        matt=img2[seg[1]-matt_inc:seg[3]+matt_inc,seg[0]-matt_inc:seg[2]+matt_inc]
+        #cv2.imshow("matt",matt)
+        #cv2.waitKey(0)
+        #cv2.destroyAllWindows()
+        w_m,h_m=matt.shape[::-1]
+        print(w," ",h," ")
+        print(w_m," ",h_m)
+        if(w+7>w_m>=w and h+7>h_m>=h):
+            res = cv2.matchTemplate(matt,template,cv2.TM_CCOEFF_NORMED)
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+            threshold = 0.7
+            mx=max(res.flatten())
+            loc = np.where( res == mx)
+            print("loc",loc)
+            if(max(res.flatten())>threshold):
+                cv2.rectangle(img, (seg[0],seg[1]), ( seg[2] , seg[3]), (0,0,255), 2)
 
     cv2.namedWindow("output", cv2.WINDOW_NORMAL)
-    cv2.resizeWindow("output", (int(img.shape[1]/2), int(img.shape[0]/2 )))
+    cv2.resizeWindow("output", (int(img.shape[1]), int(img.shape[0])))
     cv2.imshow("output",img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
     count=count+1
     print(count)
 
-cv2.namedWindow("output", cv2.WINDOW_NORMAL)
-cv2.resizeWindow("output", (int(img.shape[1]), int(img.shape[0])))
-cv2.imshow("output",img2)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
 
     
 
